@@ -31,7 +31,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "ossm-example-headers-extension"
+name = "ossm-example-body-extension"
 version = "1.0.0"
 dependencies = [
  "log",

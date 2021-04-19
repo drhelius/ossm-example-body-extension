@@ -4,7 +4,7 @@ metadata:
   name: ossm-example-body-extension
 spec:
   config: secret
-  image: quay.io/isanchez/ossm-example-body-extension:0.0.1
+  image: quay.io/isanchez/ossm-example-body-extension:1.0.0
   phase: PostAuthZ
   priority: 100
   workloadSelector:

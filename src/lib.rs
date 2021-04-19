@@ -1,43 +1,56 @@
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
 use std::str;
-use log::trace;
 
 #[no_mangle]
 pub fn _start() {
     proxy_wasm::set_log_level(LogLevel::Trace);
     proxy_wasm::set_root_context(|_| -> Box<dyn RootContext> {
         Box::new(BodyReplaceRootContext{
-            header_content: "".to_string(),
+            secret_word: "".to_string(),
         })
     });
 }
 
 struct BodyReplaceFilter{
-    header_content: String
+    secret_word: String
 }
 
 impl Context for BodyReplaceFilter {}
 
 impl HttpContext for BodyReplaceFilter {
 
-    fn on_http_request_headers(&mut self, _num_headers: usize) -> Action {
+    fn on_http_response_headers(&mut self, _: usize) -> Action {
+        // If there is a Content-Length header and we change the length of
+        // the body later, then clients will break. So remove it.
+        // We must do this here, because once we exit this function we
+        // can no longer modify the response headers.
+        self.set_http_response_header("content-length", None);
+        Action::Continue
+    }
 
-        for (name, value) in &self.get_http_request_headers() {
-            trace!("{}: {}", name, value);
-            if name.eq("custom-header") {
-                self.add_http_request_header("Custom-WASM-Header", value);
-                self.add_http_request_header("Custom-WASM-Config-Header", self.header_content.as_str());
-                self.set_http_request_header("custom-header", None);
-            }
+    fn on_http_response_body(&mut self, body_size: usize, end_of_stream: bool) -> Action {
+        if !end_of_stream {
+            // Wait -- we'll be called again when the complete body is buffered
+            // at the host side.
+            return Action::Pause;
         }
 
+        // Replace the message body if it contains the text in the config field.
+        // Since we returned "Pause" previuously, this will return the whole body.
+        if let Some(body_bytes) = self.get_http_response_body(0, body_size) {
+            let body_str = String::from_utf8(body_bytes).unwrap();
+            if body_str.contains(self.secret_word.as_str()) {
+                let new_body = format!("Secret word found!! Original message body ({} bytes) omitted.", body_size);
+                self.set_http_response_body(0, body_size, &new_body.into_bytes());
+            }
+        }
         Action::Continue
     }
 }
 
 struct BodyReplaceRootContext {
-    header_content: String
+    secret_word: String
 }
 
 impl Context for BodyReplaceRootContext {}
@@ -50,14 +63,14 @@ impl RootContext for BodyReplaceRootContext {
 
     fn on_configure(&mut self, _plugin_configuration_size: usize) -> bool {
         if let Some(config_bytes) = self.get_configuration() {
-            self.header_content = str::from_utf8(config_bytes.as_ref()).unwrap().to_owned()
+            self.secret_word = str::from_utf8(config_bytes.as_ref()).unwrap().to_owned()
         }
         true
     }
 
     fn create_http_context(&self, _context_id: u32) -> Option<Box<dyn HttpContext>> {
         Some(Box::new(BodyReplaceFilter{
-            header_content: self.header_content.clone(),
+            secret_word: self.secret_word.clone(),
         }))
     
     }
@@ -65,5 +78,4 @@ impl RootContext for BodyReplaceRootContext {
     fn get_type(&self) -> Option<ContextType> {
         Some(ContextType::HttpContext)
     }
-
 }

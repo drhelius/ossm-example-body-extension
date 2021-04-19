@@ -1,6 +1,6 @@
 HUB ?= quay.io/isanchez
 IMAGE ?= ossm-example-body-extension
-VERSION ?= 0.0.1
+VERSION ?= 1.0.0
 
 build: wasm
 
