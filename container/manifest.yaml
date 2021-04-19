@@ -1,0 +1,8 @@
+schemaVersion: 1
+  
+name: ossm-example-body-extension
+description: Replaces body when it finds a custom word
+version: 1.0.0
+phase: PreAuthZ
+priority: 100
+module: extension.wasm

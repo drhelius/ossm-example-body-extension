@@ -1,0 +1,12 @@
+apiVersion: maistra.io/v1alpha1
+kind: ServiceMeshExtension
+metadata:
+  name: ossm-example-body-extension
+spec:
+  config: secret
+  image: quay.io/isanchez/ossm-example-body-extension:0.0.1
+  phase: PostAuthZ
+  priority: 100
+  workloadSelector:
+    labels:
+      app: httpbin
