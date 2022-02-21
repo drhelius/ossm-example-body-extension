@@ -1,6 +1,7 @@
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
-use std::str;
+use serde_json::{Value};
+use std::collections::HashMap;
 
 #[no_mangle]
 pub fn _start() {
@@ -63,7 +64,12 @@ impl RootContext for BodyReplaceRootContext {
 
     fn on_configure(&mut self, _plugin_configuration_size: usize) -> bool {
         if let Some(config_bytes) = self.get_configuration() {
-            self.secret_word = str::from_utf8(config_bytes.as_ref()).unwrap().to_owned()
+            let config: Value = serde_json::from_slice(config_bytes.as_slice()).unwrap();
+            let mut m = HashMap::new();
+            for (key, value) in config.as_object().unwrap().iter() {
+                m.insert(key.to_owned(), String::from(value.as_str().unwrap()));
+            }
+            self.secret_word = m.get("secret-word").as_deref().unwrap_or(&"key not found".to_string()).to_string();
         }
         true
     }
