@@ -1,4 +1,4 @@
-HUB ?= quay.io/acidonpe
+HUB ?= quay.io/isanchez
 IMAGE ?= ossm-example-body-extension
 VERSION ?= 1.0.0
 
