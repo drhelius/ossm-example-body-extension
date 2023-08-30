@@ -3,7 +3,8 @@ kind: WasmPlugin
 metadata:
   name: ossm-example-body-extension
 spec:
-  pluginConfig: secret
+  pluginConfig:
+    secret-word: secret
   url: oci://quay.io/isanchez/ossm-example-body-extension:1.0.0
   priority: 100
   phase: STATS
